@@ -7,6 +7,7 @@ from .forms import TaskForm
 from .models import Task
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 
 
 
@@ -23,17 +24,24 @@ def signup(request):
                 'form': UserCreationForm
             })
         else:
-            if request.POST['password1'] == request.POST['password2']:
+            form = UserCreationForm(request.POST)
+            if form.is_valid():
+                if request.POST['password1'] == request.POST['password2']:
                   #register user 
-                try:
-                    user = User.objects.create_user(username=request.POST['username'], password=request.POST['password1'])
-                    user.save()
-                    login(request, user)
-                    return redirect('tasks')
-                except IntegrityError:
-                    return render(request, 'signup.html', {
-                        'form': UserCreationForm,
-                        "error": 'El usuario ya existe'
+                    try:
+                        user = User.objects.create_user(username=request.POST['username'], password=request.POST['password1'])
+                        user.save()
+                        login(request, user)
+                        return redirect('tasks')
+                    except IntegrityError:
+                        messages.error(request, 'El usuario ya existe. ')
+                else:
+                    messages.error(request, 'Las contraseñas no coinciden.')
+            else:
+                messages.error(request, 'Debes completar todos los campos del formulario.')
+                        
+            return render(request, 'signup.html', {
+                            'form': form
                     })
 
 @login_required                  
